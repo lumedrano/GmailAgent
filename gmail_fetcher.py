@@ -141,3 +141,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+#TODO: work on creating a front end, and organize agent request and add additional features like summarize and organize emails along with auto deleting unneeded emails
