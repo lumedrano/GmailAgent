@@ -13,7 +13,8 @@ OPENAI_KEY = os.getenv("OPENAI_KEY")
 
 # Flask setup
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["http://localhost:3000", "http://127.0.0.1:3000"])
+
 
 # Initialize the Gmail assistant
 gmail_service = get_gmail_service()
@@ -32,6 +33,7 @@ IMPORTANT:
 - Email indices start from 1, not 0.
 - Show the user when you're calling functions and their results.
 - Make decisions about which emails to interact with based on user requests.
+- Format your responses in markdown so they are easy to read.
 """
 
 assistant = Assistant(
