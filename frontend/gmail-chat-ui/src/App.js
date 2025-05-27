@@ -1,5 +1,5 @@
 import React from "react";
-import Chatbot from "./components/chatbot";
+import Chatbot from "./main/chatbot";
 
 function App() {
   return (

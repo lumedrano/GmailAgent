@@ -13,7 +13,8 @@ OPENAI_KEY = os.getenv("OPENAI_KEY")
 
 # Flask setup
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:3000", "http://127.0.0.1:3000"])
+# CORS(app) #regular running or used for XCode
+CORS(app, origins=["http://localhost:3000", "http://127.0.0.1:3000"]) #TODO: change if using react front end
 
 
 # Initialize the Gmail assistant
@@ -59,4 +60,6 @@ def chat():
 
 if __name__ == '__main__':
     app.run(debug=True)
+    # app.run(host="0.0.0.0", port=5050) #TODO: runs for XCode
+
 
