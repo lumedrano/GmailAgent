@@ -1,99 +1,300 @@
+// import React, { useState, useEffect, useRef } from "react";
+// import { marked } from "marked";
+// import DOMPurify from "dompurify";
+// import { AIChatInput } from "../components/ui/ai-chat-input";
+
+// export default function Chatbot() {
+//   const [messages, setMessages] = useState([]);
+//   const chatboxRef = useRef(null);
+
+//   const scrollToBottom = () => {
+//     chatboxRef.current?.scrollTo(0, chatboxRef.current.scrollHeight);
+//   };
+
+//   useEffect(() => {
+//     scrollToBottom();
+//   }, [messages]);
+
+//   const sendMessage = async (userMsg) => {
+//   if (!userMsg.trim()) return;
+
+//   // Add user's message
+//   setMessages((msgs) => [...msgs, { text: userMsg, type: "outgoing" }]);
+
+//   try {
+//     const res = await fetch("http://127.0.0.1:5000/chat", {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify({ message: userMsg }),
+//     });
+
+//     const data = await res.json();
+//     const fullReply = data.response || "No response from server.";
+
+//     // Typing animation
+//     let index = 0;
+//     let currentText = "";
+//     const typingId = Symbol(); // Unique ID to track typing
+
+//     setMessages((msgs) => [...msgs, { text: "", type: "incoming", id: typingId }]);
+
+//     const typeInterval = setInterval(() => {
+//       index++;
+//       currentText = fullReply.slice(0, index);
+//       setMessages((msgs) =>
+//         msgs.map((msg) =>
+//           msg.id === typingId ? { ...msg, text: currentText } : msg
+//         )
+//       );
+//       if (index >= fullReply.length) clearInterval(typeInterval);
+//     }, 20); // Speed of typing
+
+//   } catch {
+//     setMessages((msgs) => [
+//       ...msgs,
+//       { text: "Error communicating with server.", type: "incoming" },
+//     ]);
+//   }
+// };
+
+
+//   return (
+//     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+//       <div
+//         className="w-full max-w-3xl flex flex-col bg-white rounded-3xl shadow-xl overflow-hidden"
+//         style={{ height: "90vh" }}
+//       >
+//         {/* Scrollable Chat Messages */}
+//         <ul
+//           ref={chatboxRef}
+//           className="flex-1 overflow-y-auto px-6 py-4 space-y-4"
+//           style={{ listStyle: "none", margin: 0 }}
+//         >
+//           {messages.map((msg, i) => (
+//             <li
+//               key={i}
+//               className={`chat ${msg.type} w-full flex ${msg.type === "incoming" ? "justify-start" : "justify-end"}`}
+//             >
+//               <p
+//                 className={`rounded-xl px-4 py-2 max-w-[75%] text-sm ${
+//                   msg.type === "incoming"
+//                     ? "bg-gray-200 text-gray-800"
+//                     : "bg-blue-600 text-white"
+//                 }`}
+//                 dangerouslySetInnerHTML={{
+//                   __html: DOMPurify.sanitize(marked.parse(msg.text)),
+//                 }}
+//               />
+//             </li>
+//           ))}
+//         </ul>
+
+//         {/* Chat Input at the bottom */}
+//         <div className="border-t border-gray-200 bg-white p-4">
+//           <AIChatInput onSend={sendMessage} />
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
 import React, { useState, useEffect, useRef } from "react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import { AIChatInput } from "../components/ui/ai-chat-input";
 
 export default function Chatbot() {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState([
+    { text: "Hi there!👋 This portion of our site is under construction but check back later!", type: "incoming" },
+  ]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [displayedText, setDisplayedText] = useState("");
   const chatboxRef = useRef(null);
 
   const scrollToBottom = () => {
-    chatboxRef.current?.scrollTo(0, chatboxRef.current.scrollHeight);
+    chatboxRef.current?.scrollTo({
+      top: chatboxRef.current.scrollHeight,
+      behavior: "smooth",
+    });
   };
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, displayedText, isTyping]);
+
+  const typeWriterEffect = (text, onFinish) => {
+    let index = 0;
+    setDisplayedText("");
+
+    const interval = setInterval(() => {
+      setDisplayedText((prev) => prev + text[index]);
+      index++;
+
+      if (index === text.length) {
+        clearInterval(interval);
+        onFinish();
+      }
+    }, 20);
+  };
 
   const sendMessage = async (userMsg) => {
-  if (!userMsg.trim()) return;
+    if (!userMsg.trim()) return;
 
-  // Add user's message
-  setMessages((msgs) => [...msgs, { text: userMsg, type: "outgoing" }]);
+    setMessages((msgs) => [...msgs, { text: userMsg, type: "outgoing" }]);
+    setIsTyping(true);
 
-  try {
-    const res = await fetch("http://127.0.0.1:5000/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: userMsg }),
-    });
+    try {
+      const res = await fetch("http://127.0.0.1:5000/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: userMsg }),
+      });
+      const data = await res.json();
+      const reply = data.response || "No response from server.";
 
-    const data = await res.json();
-    const fullReply = data.response || "No response from server.";
+      // Animate the response with typewriter effect
+      typeWriterEffect(reply, () => {
+        setMessages((msgs) => [...msgs, { text: reply, type: "incoming" }]);
+        setDisplayedText("");
+        setIsTyping(false);
+      });
+    } catch {
+      const errorMsg = "Error communicating with server.";
+      setMessages((msgs) => [...msgs, { text: errorMsg, type: "incoming" }]);
+      setIsTyping(false);
+    }
+  };
 
-    // Typing animation
-    let index = 0;
-    let currentText = "";
-    const typingId = Symbol(); // Unique ID to track typing
+  const renderTypingIndicator = () => (
+    <li className="chat incoming" style={{ display: "flex", justifyContent: "flex-start" }}>
+      <div
+        style={{
+          backgroundColor: "#e5e5ea",
+          color: "#000",
+          padding: "8px 12px",
+          borderRadius: "16px",
+          maxWidth: "80%",
+          fontSize: "16px",
+          display: "inline-flex",
+          gap: "4px",
+        }}
+      >
+        <span className="typing-dot">.</span>
+        <span className="typing-dot">.</span>
+        <span className="typing-dot">.</span>
+      </div>
+    </li>
+  );
 
-    setMessages((msgs) => [...msgs, { text: "", type: "incoming", id: typingId }]);
-
-    const typeInterval = setInterval(() => {
-      index++;
-      currentText = fullReply.slice(0, index);
-      setMessages((msgs) =>
-        msgs.map((msg) =>
-          msg.id === typingId ? { ...msg, text: currentText } : msg
-        )
-      );
-      if (index >= fullReply.length) clearInterval(typeInterval);
-    }, 20); // Speed of typing
-
-  } catch {
-    setMessages((msgs) => [
-      ...msgs,
-      { text: "Error communicating with server.", type: "incoming" },
-    ]);
-  }
-};
-
+  const renderMessages = () => {
+    return messages.map((msg, i) => (
+      <li
+        key={i}
+        className={`chat ${msg.type}`}
+        style={{
+          display: "flex",
+          justifyContent: msg.type === "outgoing" ? "flex-end" : "flex-start",
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: msg.type === "outgoing" ? "#007bff" : "#e5e5ea",
+            color: msg.type === "outgoing" ? "#fff" : "#000",
+            padding: "8px 12px",
+            borderRadius: "16px",
+            maxWidth: "80%",
+            whiteSpace: "pre-wrap",
+            wordWrap: "break-word",
+            fontSize: "16px",
+          }}
+          dangerouslySetInnerHTML={{
+            __html: DOMPurify.sanitize(
+              marked.parse(msg.text, { breaks: true }).replace(/<\/?p>/g, "")
+            ),
+          }}
+        />
+      </li>
+    ));
+  };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div
-        className="w-full max-w-3xl flex flex-col bg-white rounded-3xl shadow-xl overflow-hidden"
-        style={{ height: "90vh" }}
+    <div
+      className="chatbot-container"
+      style={{
+        width: "100%",
+        maxWidth: "600px",
+        margin: "auto",
+        display: "flex",
+        flexDirection: "column",
+        height: "100vh",
+        padding: "16px",
+        boxSizing: "border-box",
+      }}
+    >
+      <ul
+        className="chatbox"
+        ref={chatboxRef}
+        style={{
+          flexGrow: 1,
+          overflowY: "auto",
+          padding: 0,
+          listStyle: "none",
+          display: "flex",
+          flexDirection: "column",
+          gap: "6px", // tight spacing
+        }}
       >
-        {/* Scrollable Chat Messages */}
-        <ul
-          ref={chatboxRef}
-          className="flex-1 overflow-y-auto px-6 py-4 space-y-4"
-          style={{ listStyle: "none", margin: 0 }}
-        >
-          {messages.map((msg, i) => (
+        {renderMessages()}
+
+        {displayedText && (
             <li
-              key={i}
-              className={`chat ${msg.type} w-full flex ${msg.type === "incoming" ? "justify-start" : "justify-end"}`}
+              className="chat incoming"
+              style={{ display: "flex", justifyContent: "flex-start" }}
             >
-              <p
-                className={`rounded-xl px-4 py-2 max-w-[75%] text-sm ${
-                  msg.type === "incoming"
-                    ? "bg-gray-200 text-gray-800"
-                    : "bg-blue-600 text-white"
-                }`}
+              <div
+                style={{
+                  backgroundColor: "#e5e5ea",
+                  color: "#000",
+                  padding: "8px 12px",
+                  borderRadius: "16px",
+                  maxWidth: "80%",
+                  whiteSpace: "pre-wrap",
+                  wordWrap: "break-word",
+                  fontSize: "16px",
+                }}
                 dangerouslySetInnerHTML={{
-                  __html: DOMPurify.sanitize(marked.parse(msg.text)),
+                  __html: DOMPurify.sanitize(
+                    marked.parse(displayedText, { breaks: true }).replace(/<\/?p>/g, "")
+                  ),
                 }}
               />
             </li>
-          ))}
-        </ul>
+          )}
 
-        {/* Chat Input at the bottom */}
-        <div className="border-t border-gray-200 bg-white p-4">
-          <AIChatInput onSend={sendMessage} />
-        </div>
+
+        {isTyping && !displayedText && renderTypingIndicator()}
+      </ul>
+
+      <div style={{ paddingTop: "8px" }}>
+        <AIChatInput onSend={sendMessage} />
       </div>
+
+      <style>
+        {`
+          .typing-dot {
+            font-size: 24px;
+            line-height: 1;
+            animation: bounce 1.2s infinite ease-in-out;
+          }
+          .typing-dot:nth-child(1) { animation-delay: 0s; }
+          .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+          .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+          @keyframes bounce {
+            0%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-8px); }
+          }
+        `}
+      </style>
     </div>
   );
 }
