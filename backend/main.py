@@ -41,7 +41,7 @@ assistant = Assistant(
     tools=[tools],
     llm=OpenAIChat(model="gpt-4o-mini", api_key=OPENAI_KEY),
     instructions=[instructions],
-    show_tool_calls=True,
+    show_tool_calls=False,
     markdown=True
 )
 
