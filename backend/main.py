@@ -1,8 +1,10 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
-from phi.assistant import Assistant
-from phi.llm.openai import OpenAIChat
+# from phi.assistant import Assistant
+# from phi.llm.openai import OpenAIChat
+from phi.agent import Agent, RunResponse
+from phi.model.ollama import Ollama 
 from phidataAgent import get_gmail_service, GmailTools
 
 import os
@@ -36,14 +38,38 @@ IMPORTANT:
 - Make decisions about which emails to interact with based on user requests.
 - Format your responses in markdown so they are easy to read.
 """
+#####Using chatgpt api
+# assistant = Assistant(
+#     tools=[tools],
+#     llm=OpenAIChat(model="gpt-4o-mini", api_key=OPENAI_KEY),
+#     instructions=[instructions],
+#     show_tool_calls=False,
+#     markdown=True
+# )
 
-assistant = Assistant(
+##using ollama
+assistant = Agent(
     tools=[tools],
-    llm=OpenAIChat(model="gpt-4o-mini", api_key=OPENAI_KEY),
-    instructions=[instructions],
+    model = Ollama(id="gmail-assistant"),
+    # instructions=[instructions],
     show_tool_calls=False,
     markdown=True
 )
+
+# @app.route('/chat', methods=['POST'])
+# def chat():
+#     data = request.get_json()
+#     user_input = data.get("message", "")
+#     try:
+#         full_response = ""
+#         for item in assistant.run(user_input):
+#             if isinstance(item, str):
+#                 print(item)
+#                 full_response += item
+#         return jsonify({"response": full_response})
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
+
 
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -51,7 +77,8 @@ def chat():
     user_input = data.get("message", "")
     try:
         full_response = ""
-        for item in assistant.run(user_input):
+        run: RunResponse = assistant.run(user_input)
+        for item in run.content:
             if isinstance(item, str):
                 full_response += item
         return jsonify({"response": full_response})

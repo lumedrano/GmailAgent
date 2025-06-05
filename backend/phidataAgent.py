@@ -7,8 +7,10 @@ from email.mime.text import MIMEText
 from dotenv import load_dotenv
 from phi.tools import Toolkit, tool
 from phi.tools import tool_registry
-from phi.assistant import Assistant
-from phi.llm.openai import OpenAIChat
+# from phi.assistant import Assistant
+# from phi.llm.openai import OpenAIChat
+from phi.agent import Agent, RunResponse
+from phi.model.ollama import Ollama 
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -63,7 +65,7 @@ class GmailTools(Toolkit):
         results = self.service.users().messages().list(
             userId='me',
             labelIds=['UNREAD'],
-            q='-category:promotions',
+            q='-category:promotions -category:social',
             maxResults=max_results
         ).execute()
         
@@ -240,16 +242,24 @@ def main():
     - "Reply to email 3 saying I'll call them tomorrow" → call reply_to_email(3, "I'll give you a call tomorrow...")
     """
 
-    assistant = Assistant(
-        tools=[tools],
-        llm=OpenAIChat(
-            model="gpt-4o-mini", 
-            api_key=OPENAI_KEY,
-        ),
-        instructions=[instructions],
-        show_tool_calls=True,  # Show the tool calls to the user
-        markdown=True
-    )
+    # assistant = Assistant(
+    #     tools=[tools],
+    #     llm=OpenAIChat(
+    #         model="gpt-4o-mini", 
+    #         api_key=OPENAI_KEY,
+    #     ),
+    #     instructions=[instructions],
+    #     show_tool_calls=True,  # Show the tool calls to the user
+    #     markdown=True
+    # )
+
+    assistant = Agent(
+    tools=[tools],
+    model = Ollama(id="llama3.2"),
+    instructions=[instructions],
+    show_tool_calls=True,
+    markdown=True
+)
 
 
     while True:
