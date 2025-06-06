@@ -50,8 +50,8 @@ IMPORTANT:
 ##using ollama
 assistant = Agent(
     tools=[tools],
+    # model = Ollama(id="custom-model", base_url="http://ollama:11434"),
     model = Ollama(id="gmail-assistant"),
-    # instructions=[instructions],
     show_tool_calls=False,
     markdown=True
 )
