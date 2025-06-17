@@ -101,6 +101,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import { AIChatInput } from "../components/ui/ai-chat-input";
+import {TextShimmer} from '../components/ui/text-shimmer'
 
 export default function Chatbot() {
   const [messages, setMessages] = useState([
@@ -164,26 +165,36 @@ export default function Chatbot() {
     }
   };
 
-  const renderTypingIndicator = () => (
-    <li className="chat incoming" style={{ display: "flex", justifyContent: "flex-start" }}>
-      <div
-        style={{
-          backgroundColor: "#e5e5ea",
-          color: "#000",
-          padding: "8px 12px",
-          borderRadius: "16px",
-          maxWidth: "80%",
-          fontSize: "16px",
-          display: "inline-flex",
-          gap: "4px",
-        }}
+  const loadingTexts = [
+  "Thinking...",
+  "Crafting a reply...",
+  "Generating response...",
+  "Please hold on...",
+  "Summoning AI magic...",
+];
+
+const renderTypingIndicator = () => {
+  const randomText = loadingTexts[Math.floor(Math.random() * loadingTexts.length)];
+  return (
+    <li
+      className="chat incoming"
+      style={{
+        display: "flex",
+        justifyContent: "flex-start",
+        paddingLeft: "4px",
+      }}
+    >
+      <TextShimmer
+        duration={1.2}
+        className="font-mono text-base [--base-color:#444] [--base-gradient-color:#999]"
       >
-        <span className="typing-dot">.</span>
-        <span className="typing-dot">.</span>
-        <span className="typing-dot">.</span>
-      </div>
+        {randomText}
+      </TextShimmer>
     </li>
   );
+};
+
+
 
   const renderMessages = () => {
     return messages.map((msg, i) => (
@@ -277,24 +288,6 @@ export default function Chatbot() {
       <div style={{ paddingTop: "8px" }}>
         <AIChatInput onSend={sendMessage} />
       </div>
-
-      <style>
-        {`
-          .typing-dot {
-            font-size: 24px;
-            line-height: 1;
-            animation: bounce 1.2s infinite ease-in-out;
-          }
-          .typing-dot:nth-child(1) { animation-delay: 0s; }
-          .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-          .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-
-          @keyframes bounce {
-            0%, 80%, 100% { transform: translateY(0); }
-            40% { transform: translateY(-8px); }
-          }
-        `}
-      </style>
     </div>
   );
 }
