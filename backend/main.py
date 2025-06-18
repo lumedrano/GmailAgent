@@ -6,12 +6,15 @@ from dotenv import load_dotenv
 from phi.agent import Agent, RunResponse
 from phi.model.ollama import Ollama 
 from phidataAgent import get_gmail_service, GmailTools
-
+from auth_service import get_user_credentials, revoke_user_credentials
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 import os
 
 # Load environment variables
 load_dotenv()
 OPENAI_KEY = os.getenv("OPENAI_KEY")
+CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 
 # Flask setup
 app = Flask(__name__)
@@ -69,6 +72,47 @@ assistant = Agent(
 #         return jsonify({"response": full_response})
 #     except Exception as e:
 #         return jsonify({"error": str(e)}), 500
+
+
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    id_token_str = data.get("id_token")
+
+    if not id_token_str:
+        return jsonify({"error": "ID token is required"}), 400
+
+    try:
+        # Verify the ID token
+        idinfo = id_token.verify_oauth2_token(id_token_str, google_requests.Request(), CLIENT_ID)
+
+        user_email = idinfo['email']
+        user_name = idinfo.get('name', '')  # you can extract more like picture, etc.
+
+        # Now get/store Gmail credentials for this user
+        creds = get_user_credentials(user_email)
+
+        return jsonify({"message": f"Authenticated for {user_email}", "email": user_email, "name": user_name})
+
+    except ValueError as e:
+        return jsonify({"error": "Invalid token"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+@app.route('/logout', methods=['POST'])
+def logout():
+    data = request.get_json()
+    user_email = data.get("user_email")
+
+    if not user_email:
+        return jsonify({"error": "User email is required"}), 400
+    
+    try:
+        revoke_user_credentials(user_email)
+        return jsonify({"message": f"Logged out {user_email}"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/chat', methods=['POST'])
