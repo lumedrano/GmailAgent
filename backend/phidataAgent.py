@@ -255,8 +255,8 @@ def main():
 
     assistant = Agent(
     tools=[tools],
-    model = Ollama(id="llama3.2"),
-    instructions=[instructions],
+    model = Ollama(id="gmail-assistant"),
+    # instructions=[instructions],
     show_tool_calls=True,
     markdown=True
 )

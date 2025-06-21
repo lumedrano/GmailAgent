@@ -1,25 +1,21 @@
-
 // import React, { useState, useEffect, useRef } from "react";
 // import { marked } from "marked";
 // import DOMPurify from "dompurify";
 // import { AIChatInput } from "../components/ui/ai-chat-input";
 // import { TextShimmer } from "../components/ui/text-shimmer";
 // import logo from "../components/images/logo.png";
-
-// // You can add this in your main HTML <head> or use a CSS import:
-// // import '@fontsource/poppins'; // if you install it via npm
-// // Or add this in your index.html head:
-// // <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap" rel="stylesheet" />
+// import { LoaderIcon, CheckCircle2Icon } from "lucide-react";
 
 // export default function Chatbot() {
 //   const [messages, setMessages] = useState([
 //     {
-//       text: "Hi there!👋 This portion of our site is under construction but check back later!",
+//       text: "Hi there! 👋 Welcome to Echo Beta. Give me any task like sending an email, checking unread emails, or replying to one.",
 //       type: "incoming",
 //     },
 //   ]);
 //   const [isTyping, setIsTyping] = useState(false);
 //   const [displayedText, setDisplayedText] = useState("");
+//   const [toolStatus, setToolStatus] = useState([]); // <-- Tracks active tool calls
 //   const chatboxRef = useRef(null);
 
 //   const scrollToBottom = () => {
@@ -31,7 +27,7 @@
 
 //   useEffect(() => {
 //     scrollToBottom();
-//   }, [messages, displayedText, isTyping]);
+//   }, [messages, displayedText, toolStatus, isTyping]);
 
 //   const typeWriterEffect = (text, onFinish) => {
 //     let index = 0;
@@ -40,7 +36,6 @@
 //     const interval = setInterval(() => {
 //       setDisplayedText((prev) => prev + text[index]);
 //       index++;
-
 //       if (index === text.length) {
 //         clearInterval(interval);
 //         onFinish();
@@ -53,6 +48,7 @@
 
 //     setMessages((msgs) => [...msgs, { text: userMsg, type: "outgoing" }]);
 //     setIsTyping(true);
+//     setToolStatus([]); // Clear tool statuses for a fresh response
 
 //     try {
 //       const res = await fetch("http://127.0.0.1:5000/chat", {
@@ -61,12 +57,30 @@
 //         body: JSON.stringify({ message: userMsg }),
 //       });
 //       const data = await res.json();
-//       const reply = data.response || "No response from server.";
+//       let reply = data.response || "No response from server.";
 
-//       typeWriterEffect(reply, () => {
-//         setMessages((msgs) => [...msgs, { text: reply, type: "incoming" }]);
+//       // Tool call detection (e.g., Running: get_unread_emails(...))
+//       const toolCallRegex = /Running:\s*(.*?)\n/g;
+//       let match;
+//       let newToolStatus = [];
+//       while ((match = toolCallRegex.exec(reply)) !== null) {
+//         newToolStatus.push({ tool: match[1], done: false });
+//       }
+//       setToolStatus(newToolStatus);
+
+//       // Replace tool calls with nothing for the actual message display
+//       const cleanedReply = reply.replace(/Running: .*?\n/g, "");
+
+//       // Animate reply after tool calls are shown
+//       typeWriterEffect(cleanedReply, () => {
+//         setMessages((msgs) => [...msgs, { text: cleanedReply, type: "incoming" }]);
 //         setDisplayedText("");
 //         setIsTyping(false);
+
+//         // Mark tools as done
+//         setToolStatus((prev) =>
+//           prev.map((item) => ({ ...item, done: true }))
+//         );
 //       });
 //     } catch {
 //       const errorMsg = "Error communicating with server.";
@@ -74,6 +88,38 @@
 //       setIsTyping(false);
 //     }
 //   };
+
+//   const renderToolStatus = () => {
+//   return toolStatus.map((item, idx) => (
+//     <li
+//       key={`tool-${idx}`}
+//       className="chat incoming"
+//       style={{
+//         display: "flex",
+//         justifyContent: "flex-start",
+//         fontSize: "14px",
+//         color: "#555",
+//       }}
+//     >
+//       <div
+//         className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm"
+//         style={{
+//           backgroundColor: "#f1f1f1",
+//           color: "#333",
+//           whiteSpace: "nowrap",
+//         }}
+//       >
+//         {item.done ? (
+//           <CheckCircle2Icon className="w-4 h-4 text-green-600" />
+//         ) : (
+//           <LoaderIcon className="w-4 h-4 animate-spin text-blue-500" />
+//         )}
+//         {item.tool}
+//       </div>
+//     </li>
+//   ));
+// };
+
 
 //   const loadingTexts = [
 //     "Thinking...",
@@ -138,40 +184,40 @@
 
 //   return (
 //     <>
-//       {/* Title + Logo container */}
-// <div
-//   style={{
-//     display: "flex",
-//     alignItems: "center",
-//     justifyContent: "center",
-//     gap: "12px", // space between logo and title
-//     marginTop: "24px",
-//     marginBottom: "12px",
-//     userSelect: "none",
-//   }}
-// >
-//   <img
-//     src={logo}
-//     alt="Logo"
-//     style={{
-//       width: "60px",
-//       height: "60px",
-//       objectFit: "contain",
-//     }}
-//   />
-  
-//   <TextShimmer
-//     duration={1.5}
-//     className="font-poppins font-semibold text-4xl" // adjust classes if using Tailwind or your CSS
-//     style={{
-//       fontFamily: "'Poppins', sans-serif",
-//       fontWeight: 600,
-//       userSelect: "none",
-//     }}
-//   >
-//     Echo
-//   </TextShimmer>
-// </div>
+//       {/* Title + Logo */}
+//       <div
+//         style={{
+//           display: "flex",
+//           alignItems: "center",
+//           justifyContent: "center",
+//           gap: "12px",
+//           marginTop: "24px",
+//           marginBottom: "12px",
+//           userSelect: "none",
+//         }}
+//       >
+//         <TextShimmer
+//           duration={1.5}
+//           className="font-poppins font-semibold text-4xl"
+//           style={{
+//             fontFamily: "'Poppins', sans-serif",
+//             fontWeight: 600,
+//             userSelect: "none",
+//           }}
+//         >
+//           Echo
+//         </TextShimmer>
+
+//         <img
+//           src={logo}
+//           alt="Logo"
+//           style={{
+//             width: "50px",
+//             height: "50px",
+//             objectFit: "contain",
+//           }}
+//         />
+//       </div>
 
 //       <div
 //         className="chatbot-container"
@@ -181,58 +227,12 @@
 //           margin: "auto",
 //           display: "flex",
 //           flexDirection: "column",
-//           height: "calc(100vh - 100px)", // account for title height + margins
+//           height: "calc(100vh - 100px)",
 //           padding: "0",
 //           boxSizing: "border-box",
 //           position: "relative",
 //         }}
 //       >
-//         {/* Logo on top-left corner, bigger size
-//         <div
-//           style={{
-//             position: "fixed",
-//             top: "16px",
-//             left: "16px",
-//             zIndex: 9999,
-//           }}
-//         >
-//           <img
-//             src={logo}
-//             alt="Logo"
-//             style={{ width: "85px", height: "85px", objectFit: "contain" }}
-//           />
-//         </div> */}
-
-//         {/* Name and Logout button on top-right corner */}
-//         <div
-//           style={{
-//             position: "fixed",
-//             top: "16px",
-//             right: "16px",
-//             display: "flex",
-//             alignItems: "center",
-//             gap: "12px",
-//             zIndex: 9999,
-//           }}
-//         >
-//           <span style={{ fontSize: "18px", fontWeight: "bold" }}>Luigi</span>
-
-//           <button
-//             style={{
-//               backgroundColor: "transparent",
-//               color: "#000",
-//               border: "1px solid #000",
-//               padding: "6px 12px",
-//               borderRadius: "4px",
-//               cursor: "pointer",
-//               fontSize: "14px",
-//             }}
-//             onClick={() => console.log("Logout clicked (does nothing)")}
-//           >
-//             Logout
-//           </button>
-//         </div>
-
 //         <ul
 //           className="chatbox"
 //           ref={chatboxRef}
@@ -244,11 +244,11 @@
 //             display: "flex",
 //             flexDirection: "column",
 //             gap: "6px",
-//             marginTop: "96px", // push content below fixed header area
+//             marginTop: "12px",
 //           }}
 //         >
 //           {renderMessages()}
-
+//           {renderToolStatus()}
 //           {displayedText && (
 //             <li
 //               className="chat incoming"
@@ -276,7 +276,6 @@
 //               />
 //             </li>
 //           )}
-
 //           {isTyping && !displayedText && renderTypingIndicator()}
 //         </ul>
 
@@ -295,20 +294,18 @@ import DOMPurify from "dompurify";
 import { AIChatInput } from "../components/ui/ai-chat-input";
 import { TextShimmer } from "../components/ui/text-shimmer";
 import logo from "../components/images/logo.png";
-
-// Make sure to include Poppins font in your project (index.html or npm package)
-// Example in index.html:
-// <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap" rel="stylesheet" />
+import { LoaderIcon, CheckCircle2Icon } from "lucide-react";
 
 export default function Chatbot() {
   const [messages, setMessages] = useState([
     {
-      text: "Hi there!👋 Welcome to Echo's Beta, feel free to give me any task like sending an email, scheduling meetings, etc. I'm here to help you with any task you need to complete. I'm still learning, so please be patient and give me a few seconds to think about your request.",
+      text: "Hi there! 👋 Welcome to Echo Beta. Give me any task like sending an email, checking unread emails, or replying to one.",
       type: "incoming",
     },
   ]);
   const [isTyping, setIsTyping] = useState(false);
   const [displayedText, setDisplayedText] = useState("");
+  const [toolStatus, setToolStatus] = useState([]);
   const chatboxRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -320,7 +317,7 @@ export default function Chatbot() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, displayedText, isTyping]);
+  }, [messages, displayedText, toolStatus, isTyping]);
 
   const typeWriterEffect = (text, onFinish) => {
     let index = 0;
@@ -329,7 +326,6 @@ export default function Chatbot() {
     const interval = setInterval(() => {
       setDisplayedText((prev) => prev + text[index]);
       index++;
-
       if (index === text.length) {
         clearInterval(interval);
         onFinish();
@@ -342,6 +338,7 @@ export default function Chatbot() {
 
     setMessages((msgs) => [...msgs, { text: userMsg, type: "outgoing" }]);
     setIsTyping(true);
+    setToolStatus([]);
 
     try {
       const res = await fetch("http://127.0.0.1:5000/chat", {
@@ -350,12 +347,26 @@ export default function Chatbot() {
         body: JSON.stringify({ message: userMsg }),
       });
       const data = await res.json();
-      const reply = data.response || "No response from server.";
+      let reply = data.response || "No response from server.";
 
-      typeWriterEffect(reply, () => {
-        setMessages((msgs) => [...msgs, { text: reply, type: "incoming" }]);
+      const toolCallRegex = /Running:\s*(.*?)\n/g;
+      let match;
+      let newToolStatus = [];
+      while ((match = toolCallRegex.exec(reply)) !== null) {
+        newToolStatus.push({ tool: match[1], done: false });
+      }
+      setToolStatus(newToolStatus);
+
+      const cleanedReply = reply.replace(/Running: .*?\n/g, "");
+
+      typeWriterEffect(cleanedReply, () => {
+        setMessages((msgs) => [...msgs, { text: cleanedReply, type: "incoming" }]);
         setDisplayedText("");
         setIsTyping(false);
+
+        setToolStatus((prev) =>
+          prev.map((item) => ({ ...item, done: true }))
+        );
       });
     } catch {
       const errorMsg = "Error communicating with server.";
@@ -363,6 +374,36 @@ export default function Chatbot() {
       setIsTyping(false);
     }
   };
+
+  const renderToolStatus = () =>
+    toolStatus.map((item, idx) => (
+      <li
+        key={`tool-${idx}`}
+        className="chat incoming"
+        style={{
+          display: "flex",
+          justifyContent: "flex-start",
+          fontSize: "14px",
+          color: "#555",
+        }}
+      >
+        <div
+          className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm"
+          style={{
+            backgroundColor: "#f1f1f1",
+            color: "#333",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {item.done ? (
+            <CheckCircle2Icon className="w-4 h-4 text-green-600" />
+          ) : (
+            <LoaderIcon className="w-4 h-4 animate-spin text-blue-500" />
+          )}
+          {item.tool}
+        </div>
+      </li>
+    ));
 
   const loadingTexts = [
     "Thinking...",
@@ -395,39 +436,56 @@ export default function Chatbot() {
   };
 
   const renderMessages = () => {
-    return messages.map((msg, i) => (
-      <li
-        key={i}
-        className={`chat ${msg.type}`}
-        style={{
-          display: "flex",
-          justifyContent: msg.type === "outgoing" ? "flex-end" : "flex-start",
-        }}
-      >
-        <div
+  return messages.map((msg, i) => (
+    <li
+      key={i}
+      className={`chat ${msg.type}`}
+      style={{
+        display: "flex",
+        justifyContent: msg.type === "outgoing" ? "flex-end" : "flex-start",
+        alignItems: "flex-start", // Aligns logo + text at top
+        gap: msg.type === "incoming" ? "8px" : "0", // Space between logo & text
+      }}
+    >
+      {msg.type === "incoming" && (
+        <img
+          src={logo}
+          alt="Bot"
           style={{
-            backgroundColor: msg.type === "outgoing" ? "#007bff" : "#e5e5ea",
-            color: msg.type === "outgoing" ? "#fff" : "#000",
-            padding: "8px 12px",
-            borderRadius: "16px",
-            maxWidth: "80%",
-            whiteSpace: "pre-wrap",
-            wordWrap: "break-word",
-            fontSize: "16px",
-          }}
-          dangerouslySetInnerHTML={{
-            __html: DOMPurify.sanitize(
-              marked.parse(msg.text, { breaks: true }).replace(/<\/?p>/g, "")
-            ),
+            width: "32px",
+            height: "32px",
+            borderRadius: "50%", // makes it circular like a profile pic
+            objectFit: "cover",
+            marginTop: "2px",
           }}
         />
-      </li>
-    ));
-  };
+      )}
+
+      <div
+        style={{
+          backgroundColor: msg.type === "outgoing" ? "#007bff" : "#e5e5ea",
+          color: msg.type === "outgoing" ? "#fff" : "#000",
+          padding: "8px 12px",
+          borderRadius: "16px",
+          maxWidth: "80%",
+          whiteSpace: "pre-wrap",
+          wordWrap: "break-word",
+          fontSize: "16px",
+        }}
+        dangerouslySetInnerHTML={{
+          __html: DOMPurify.sanitize(
+            marked.parse(msg.text, { breaks: true }).replace(/<\/?p>/g, "")
+          ),
+        }}
+      />
+    </li>
+  ));
+};
+
 
   return (
     <>
-      {/* Title + Logo container */}
+      {/* Title + Animated Logo */}
       <div
         style={{
           display: "flex",
@@ -451,15 +509,15 @@ export default function Chatbot() {
           Echo
         </TextShimmer>
 
-        <img
+       <img
   src={logo}
   alt="Logo"
   style={{
     width: "60px",
     height: "60px",
     objectFit: "contain",
-    animationName: "peekWave",
-    animationDuration: "4s",
+    animationName: "rotateShakePause",
+    animationDuration: "3s",     // 0.5s shaking + ~2.5s pause
     animationTimingFunction: "ease-in-out",
     animationIterationCount: "infinite",
     transformOrigin: "bottom center",
@@ -467,9 +525,10 @@ export default function Chatbot() {
 />
 
 
+        
       </div>
 
-      {/* Name and Logout button on top-right corner */}
+      {/* Username and Logout Button */}
       <div
         style={{
           position: "fixed",
@@ -483,7 +542,6 @@ export default function Chatbot() {
         }}
       >
         <span style={{ fontSize: "18px", fontWeight: "bold" }}>Luigi</span>
-
         <button
           style={{
             backgroundColor: "transparent",
@@ -500,6 +558,7 @@ export default function Chatbot() {
         </button>
       </div>
 
+      {/* Chatbot Container */}
       <div
         className="chatbot-container"
         style={{
@@ -508,11 +567,10 @@ export default function Chatbot() {
           margin: "auto",
           display: "flex",
           flexDirection: "column",
-          height: "calc(100vh - 120px)", // space for title + margins
+          height: "calc(100vh - 120px)",
           padding: "0",
           boxSizing: "border-box",
           position: "relative",
-          marginTop: "12px",
         }}
       >
         <ul
@@ -526,11 +584,11 @@ export default function Chatbot() {
             display: "flex",
             flexDirection: "column",
             gap: "6px",
-            marginTop: "0", // no extra margin needed here
+            marginTop: "0",
           }}
         >
           {renderMessages()}
-
+          {renderToolStatus()}
           {displayedText && (
             <li
               className="chat incoming"
@@ -549,16 +607,12 @@ export default function Chatbot() {
                 }}
                 dangerouslySetInnerHTML={{
                   __html: DOMPurify.sanitize(
-                    marked.parse(displayedText, { breaks: true }).replace(
-                      /<\/?p>/g,
-                      ""
-                    )
+                    marked.parse(displayedText, { breaks: true }).replace(/<\/?p>/g, "")
                   ),
                 }}
               />
             </li>
           )}
-
           {isTyping && !displayedText && renderTypingIndicator()}
         </ul>
 
@@ -567,40 +621,50 @@ export default function Chatbot() {
         </div>
       </div>
 
-      {/* Add animation CSS */}
+      {/* Animation CSS */}
       <style>
         {`
-         @keyframes peekWave {
-  0% {
-    transform: translateY(60px) scale(0.8);
-    opacity: 0;
-  }
-  30% {
-    transform: translateY(0) scale(1);
-    opacity: 1;
-  }
-  40%, 80% {
-    opacity: 1; /* Stay fully visible while shaking */
-  }
-  40% {
-    transform: translateX(-10px) translateY(0) scale(1);
-  }
-  50% {
-    transform: translateX(10px) translateY(0) scale(1);
-  }
-  60% {
-    transform: translateX(-8px) translateY(0) scale(1);
-  }
-  70% {
-    transform: translateX(8px) translateY(0) scale(1);
-  }
-  80% {
-    transform: translateX(0) translateY(0) scale(1);
-  }
-  100% {
-    transform: translateY(60px) scale(0.8);
-    opacity: 0;
-  }
+          @keyframes peekWave {
+            0% {
+              transform: translateY(60px) scale(0.8);
+              opacity: 0;
+            }
+            30% {
+              transform: translateY(0) scale(1);
+              opacity: 1;
+            }
+            40%, 80% {
+              opacity: 1;
+            }
+            40% {
+              transform: translateX(-10px) translateY(0) scale(1);
+            }
+            50% {
+              transform: translateX(10px) translateY(0) scale(1);
+            }
+            60% {
+              transform: translateX(-8px) translateY(0) scale(1);
+            }
+            70% {
+              transform: translateX(8px) translateY(0) scale(1);
+            }
+            80% {
+              transform: translateX(0) translateY(0) scale(1);
+            }
+            100% {
+              transform: translateY(60px) scale(0.8);
+              opacity: 0;
+            }
+          }
+
+          @keyframes rotateShakePause {
+  0% { transform: rotate(0deg); }
+  10% { transform: rotate(-10deg); }
+  20% { transform: rotate(10deg); }
+  30% { transform: rotate(-10deg); }
+  40% { transform: rotate(10deg); }
+  50% { transform: rotate(0deg); }
+  100% { transform: rotate(0deg); } /* Pause until restart */
 }
 
 

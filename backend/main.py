@@ -5,7 +5,9 @@ from dotenv import load_dotenv
 # from phi.llm.openai import OpenAIChat
 from phi.agent import Agent, RunResponse
 from phi.model.ollama import Ollama 
-from phidataAgent import get_gmail_service, GmailTools
+# from phidataAgent import get_gmail_service, GmailTools
+from GmailTools import get_gmail_service, GmailTools
+from calendarTools import get_calendar_service, CalendarTools
 from auth_service import get_user_credentials, revoke_user_credentials
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
@@ -22,9 +24,13 @@ app = Flask(__name__)
 CORS(app, origins=["http://localhost:3000", "http://127.0.0.1:3000"]) #TODO: change if using react front end
 
 
+
 # Initialize the Gmail assistant
 gmail_service = get_gmail_service()
-tools = GmailTools(service=gmail_service)
+gmail_tools = GmailTools(service=gmail_service)
+
+gcal_service = get_calendar_service()
+gcal_tools = CalendarTools(service=gcal_service)
 
 instructions = """
 You are an AI email assistant using Gmail. Follow these guidelines:
@@ -52,10 +58,10 @@ IMPORTANT:
 
 ##using ollama
 assistant = Agent(
-    tools=[tools],
+    tools=[gmail_tools, gcal_tools],
     # model = Ollama(id="custom-model", base_url="http://ollama:11434"),
     model = Ollama(id="gmail-assistant"),
-    show_tool_calls=False,
+    show_tool_calls=True,
     markdown=True
 )
 
@@ -127,6 +133,7 @@ def chat():
                 full_response += item
         return jsonify({"response": full_response})
     except Exception as e:
+        print(e)
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
