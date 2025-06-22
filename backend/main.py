@@ -11,7 +11,8 @@ from calendarTools import get_calendar_service, CalendarTools
 from auth_service import get_user_credentials, revoke_user_credentials
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
-import os
+import os, signal
+from threading import Timer
 
 # Load environment variables
 load_dotenv()
@@ -61,6 +62,8 @@ assistant = Agent(
     tools=[gmail_tools, gcal_tools],
     # model = Ollama(id="custom-model", base_url="http://ollama:11434"),
     model = Ollama(id="gmail-assistant"),
+    add_chat_history_to_messages=True,
+    num_history_responses=3,
     show_tool_calls=True,
     markdown=True
 )
@@ -106,19 +109,38 @@ def login():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
+# @app.route('/logout', methods=['POST'])
+# def logout():
+#     data = request.get_json()
+#     user_email = data.get("user_email")
+
+#     if not user_email:
+#         return jsonify({"error": "User email is required"}), 400
+    
+#     try:
+#         revoke_user_credentials(user_email)
+#         return jsonify({"message": f"Logged out {user_email}"})
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
+
+
+def delayed_shutdown():
+    os.kill(os.getpid(), signal.SIGINT)
+
 @app.route('/logout', methods=['POST'])
 def logout():
-    data = request.get_json()
-    user_email = data.get("user_email")
-
-    if not user_email:
-        return jsonify({"error": "User email is required"}), 400
-    
     try:
-        revoke_user_credentials(user_email)
-        return jsonify({"message": f"Logged out {user_email}"})
+        # Clear any user data
+        assistant.memory.clear()
+        print("Assistant memory cleared.")
+        
+        # Shutdown after a brief delay to allow response to be sent
+        Timer(1.0, delayed_shutdown).start()
+        
+        return jsonify({"message": "Logged out. Server shutting down."})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 
 @app.route('/chat', methods=['POST'])
