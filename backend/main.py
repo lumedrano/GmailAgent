@@ -60,8 +60,8 @@ IMPORTANT:
 ##using ollama
 assistant = Agent(
     tools=[gmail_tools, gcal_tools],
-    # model = Ollama(id="custom-model", base_url="http://ollama:11434"),
-    model = Ollama(id="gmail-assistant"),
+    model = Ollama(id="gmail-assistant", base_url="http://127.0.0.1:11434"),
+    # model = Ollama(id="gmail-assistant"),
     add_chat_history_to_messages=True,
     num_history_responses=3,
     show_tool_calls=True,
